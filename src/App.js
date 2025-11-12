@@ -1,4 +1,3 @@
-import logo from './logo.svg';
 import './App.css';
 import Weath from './Weath';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';

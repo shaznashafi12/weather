@@ -3,7 +3,6 @@ import React, { useState } from "react";
 import img from "./images/sky4.jpeg";
 import { TiWeatherPartlySunny } from "react-icons/ti";
 import humidityImg from "./images/humidity.png";
-import tem from "./images/tmm.png";
 import { VscCompass } from "react-icons/vsc";
 import { FaWater, FaArrowUp } from "react-icons/fa"; // ✅ Added for Sea Level icon
 import { WiNightCloudyWindy } from "react-icons/wi";
@@ -57,7 +56,7 @@ const Weath = () => {
         <>
 
          <div className=" items-center text-white ">
-                  <img src={img1} width={200} height={200} className="ml-5 mb-[-50px]" ></img>
+                  <img src={img1} width={200} alt="" height={200} className="ml-5 mb-[-50px]" ></img>
 
   <div className=" flex items-center gap-6">
     <div>
