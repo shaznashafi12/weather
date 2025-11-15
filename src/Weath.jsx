@@ -1,125 +1,205 @@
-import axios from "axios";
-import React, { useState } from "react";
-import img from "./images/sky4.jpeg";
-import { TiWeatherPartlySunny } from "react-icons/ti";
-import humidityImg from "./images/humidity.png";
-import { VscCompass } from "react-icons/vsc";
-import { FaWater, FaArrowUp } from "react-icons/fa"; // ✅ Added for Sea Level icon
-import { WiNightCloudyWindy } from "react-icons/wi";
-import { FaTemperatureHigh } from "react-icons/fa";
+import React, { useState } from 'react'
+import axios from 'axios'
+import { TiWeatherPartlySunny } from 'react-icons/ti'
+import { VscCompass } from 'react-icons/vsc'
+import { FaWater, FaTemperatureHigh } from 'react-icons/fa'
+import { WiNightCloudyWindy } from 'react-icons/wi'
+import {
+  LineChart,
+  Line,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts'
+import humidityImg from './images/humidity.png'
+import img from './images/sky4.jpeg'
 
-import img1 from "./images/wee1.png"
-const Weath = () => {
-  const [data, setdata] = useState(null);
-  const [search, setsearch] = useState("");
+export default function Weath() {
+  const [data, setdata] = useState(null)
+  const [hourlyData, setHourlyData] = useState([])
+  const [search, setsearch] = useState('')
+  const [forecast, setForecast] = useState([])
 
-  const handlechange = (event) => {
-    setsearch(event.target.value);
-  };
+  const handlechange = (e) => setsearch(e.target.value)
 
-  const handlesubmit = async (event) => {
-    event.preventDefault();
-      const response = await axios.get(
-        `https://api.openweathermap.org/data/2.5/weather?q=${search}&units=metric&appid=0cf3d05c6cb443424f42856d18e090b3`
-      );
-      setdata(response.data);
-      
-  };
+  const handlesubmit = async (e) => {
+    e.preventDefault()
+    try {
+      const API = '0cf3d05c6cb443424f42856d18e090b3' // replace with your key if needed
+      const resp = await axios.get(
+        `https://api.openweathermap.org/data/2.5/weather?q=${search}&units=metric&appid=${API}`
+      )
+      setdata(resp.data)
 
-    return (
+      const f = await axios.get(
+        `https://api.openweathermap.org/data/2.5/forecast?q=${search}&units=metric&appid=${API}`
+      )
+
+      const hourly = f.data.list.slice(0, 12).map((item) => ({
+        time: new Date(item.dt * 1000).toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+        }),
+        temp: Math.round(item.main.temp),
+      }))
+      setHourlyData(hourly)
+
+      const days = {}
+      f.data.list.forEach((it) => {
+        const day = new Date(it.dt * 1000).toLocaleDateString(undefined, {
+          weekday: 'short',
+        })
+        if (!days[day]) days[day] = []
+        days[day].push(it.main.temp)
+      })
+      const dayForecast = Object.keys(days).slice(0, 6).map((d) => ({
+        day: d,
+        temp: Math.round(
+          days[d].reduce((a, b) => a + b, 0) / days[d].length
+        ),
+      }))
+      setForecast(dayForecast)
+    } catch (err) {
+      console.error(err)
+      alert('Could not fetch weather. Check city name or API key in component.')
+    }
+  }
+
+  return (
     <div
-      className="w-full h-[120vh] bg-cover bg-center flex flex-col items-center"
-      style={{ backgroundImage: `url(${img})` }}
+      className="min-h-screen w-full flex flex-col items-center justify-start px-6 py-8"
+      style={{
+        backgroundImage: `url(${img})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
     >
-      <h1 className="flex items-center gap-4 font-bold mt-20 text-5xl text-white">
-        <TiWeatherPartlySunny className="w-14 h-14 text-yellow-300" />
-        WEATHER
-      </h1>
-
-      <form onSubmit={handlesubmit} className="mt-10 flex gap-3">
+      <h1 className="flex items-center gap-4 font-bold mt-10 text-5xl text-yellow-600"> <TiWeatherPartlySunny className="w-14 h-14 text-yellow-600" /> WEATHER </h1>
+     
+       <form
+        onSubmit={handlesubmit}
+        className="mt-2 mb-10 flex gap-3  bg-white/10 p-3 rounded-2xl backdrop-blur-lg"
+      >
         <input
           type="text"
           value={search}
           onChange={handlechange}
-          className="text-center text-lg text-white bg-gray-700/50 placeholder-gray-300 backdrop-blur-md rounded-xl h-[50px] w-[350px] focus:outline-none border border-gray-500"
+          className="text-center text-lg text-white  bg-white/10 placeholder-gray-300 rounded-xl h-[50px] w-[350px] focus:outline-none border border-white/20"
           placeholder="Search city..."
         />
         <button
           type="submit"
-          className="w-[100px] h-[50px] text-1xl font-sans bg-gray-600 hover:bg-gray-900 text-white rounded"
+          className="w-[120px] h-[50px] bg-yellow-600 hover:opacity-90 active:scale-95 transition text-white rounded-xl text-lg font-semibold shadow-xl"
         >
           Search
         </button>
       </form>
 
-      {data && data.main && data.weather && (
-        <>
+      {data && data.main && (
+        <main className="w-full max-w-[1200px] bg-black/50 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/10">
+          <div className="flex gap-6 items-start">
+            <section className="flex-1 text-white pl-6">
+              <div className="flex items-start gap-6">
+                <div className="text-left">
+                  <div className="text-[96px] font-extrabold leading-none">
+                    {Math.round(data.main.temp)}
+                    <span className="text-3xl font-medium ml-2">°C</span>
+                  </div>
+                  <div className="text-2xl text-white/90 mt-2 font-light capitalize">
+                    {data.weather?.[0]?.description}
+                  </div>
 
-         <div className=" items-center text-white ">
-                  <img src={img1} width={200} alt="" height={200} className="ml-5 mb-[-50px]" ></img>
+                  <div className="mt-6 grid grid-cols-2 gap-4 text-sm text-white/80">
+                    <div className="flex items-center gap-3">
+                      <img src={humidityImg} alt="hum" className="w-7" />
+                      <div>
+                        <div className="text-xs text-white/70">Humidity</div>
+                        <div className="font-medium text-lg">{data.main.humidity}%</div>
+                      </div>
+                    </div>
 
-  <div className=" flex items-center gap-6">
-    <div>
-      <h2 className="text-7xl font-serif font-semibold">{data.name}</h2>
-      <p className="text-gray-300 text-2xl capitalize font-mono">
-        {data.weather?.[0]?.description}
-      </p>
-    </div>
+                    <div className="flex items-center gap-3">
+                      <VscCompass className="w-6 h-6" />
+                      <div>
+                        <div className="text-xs text-white/70">Pressure</div>
+                        <div className="font-medium text-lg">{data.main.pressure} hPa</div>
+                      </div>
+                    </div>
 
-    <div className="text-6xl font-bold font-mono text-yellow-300 pb-7 ml-5">
-      {data.main.temp}°C
-    </div>
-  </div>
-</div>
-          <div className="mt-9 bg-black/50 backdrop-blur-lg rounded-3xl text-white w-[1500px] p-8 shadow-2xl">
-            <div className="flex justify-center flex-wrap gap-8">
-              <div className="bg-white/20 backdrop-blur-lg rounded-2xl shadow-xl h-[600px] w-[250px] p-6 flex flex-col items-center hover:scale-105 transition-transform duration-300">
-                <img src={humidityImg} alt="humidity" className="w-[350px] h-[300px] mb-2 mt-10" />
-                <p className="text-gray-200 text-4xl font-serif font-bold mt-5">Humidity</p>
-                <h3 className="text-3xl font-semibold">{data.main.humidity}%</h3>
-              </div>
+                    <div className="flex items-center gap-3">
+                      <FaWater className="w-6 h-6 text-blue-300" />
+                      <div>
+                        <div className="text-xs text-white/70">Sea level</div>
+                        <div className="font-medium text-lg">{data.main.sea_level ? `${data.main.sea_level} m` : 'N/A'}</div>
+                      </div>
+                    </div>
 
-              <div className="bg-white/20 backdrop-blur-lg rounded-2xl shadow-xl h-[600px] w-[250px] p-6 flex flex-col items-center hover:scale-105 transition-transform duration-300">
-<VscCompass className="w-[200px] h-[200px] mt-20"/>
-
-                <p className="text-gray-200 text-4xl font-serif font-bold mt-20">Pressure</p>
-                <h3 className="text-3xl font-semibold">{data.main.pressure} hPa</h3>
-              </div>
-             <div className="bg-white/20 backdrop-blur-lg rounded-2xl shadow-xl h-[600px] w-[250px] p-6 flex flex-col items-center hover:scale-105 transition-transform duration-300">
-                <div className="flex items-center gap-3 mt-16">
-                  <FaWater className="text-white text-9xl mt-10 ml-2" />
-                  <FaArrowUp className="text-white text-6xl mt-10" />
+                    <div className="flex items-center gap-3">
+                      <WiNightCloudyWindy className="w-6 h-6" />
+                      <div>
+                        <div className="text-xs text-white/70">Wind</div>
+                        <div className="font-medium text-lg">{data.wind?.speed} m/s</div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <p className="text-gray-200 text-4xl font-serif font-bold mt-32">
-                  Sea Level
-                </p>
-                <h3 className="text-3xl font-semibold">
-                  {data.main.sea_level ? `${data.main.sea_level} m` : "N/A"}
-                </h3>
+
+                <div className="ml-auto text-right pr-6">
+                  <div className="text-sm text-white/70">{new Date().toLocaleDateString()}</div>
+                  <div className="text-3xl font-semibold mt-2">{data.name}</div>
+                </div>
+              </div>
+            </section>
+
+           
+
+            <aside className="w-72 bg-gradient-to-b from-white/5 to-white/3 rounded-2xl p-4 border border-white/8 shadow-md text-white/90">
+              <h4 className="text-lg font-semibold mb-4">Weekly</h4>
+              <div className="flex flex-col gap-3">
+                {forecast.length > 0 ? (
+                  forecast.map((f, i) => (
+                    <div key={i} className="flex items-center justify-between">
+                      <div className="text-sm text-white/80">{f.day}</div>
+                      <div className="text-sm font-semibold">{f.temp}°</div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-sm text-white/60">No forecast yet — search a city.</div>
+                )}
               </div>
 
+              <div className="mt-6 text-sm text-white/60">Feels like <span className="font-medium text-white/90">{Math.round(data.main.feels_like)}°C</span></div>
+            </aside>
+          </div>
 
-              <div className="bg-white/20 backdrop-blur-lg rounded-2xl shadow-xl h-[600px] w-[250px] p-6 flex flex-col items-center hover:scale-105 transition-transform duration-300">
-                <WiNightCloudyWindy className="w-[200px] h-[200px] mt-20"/>
-
-                <p className="text-gray-200 text-4xl font-serif font-bold mt-20">Wind</p>
-                <h3 className="text-3xl font-semibold">{data.wind?.speed} m/s</h3>
-              </div>
-
-              <div className="bg-white/20 backdrop-blur-lg rounded-2xl shadow-xl h-[600px] w-[250px] p-6 flex flex-col items-center hover:scale-105 transition-transform duration-300">
-              <FaTemperatureHigh className="w-[180px] h-[200px] mt-20"/>
-
-                <p className="text-gray-200 text-4xl font-serif font-bold mt-20">Feels Like</p>
-                <h3 className="text-3xl font-semibold">
-                  {Math.round(data.main.feels_like)}°C
-                </h3>
+          <div className="mt-8">
+            <div className="w-full bg-black/40 rounded-2xl p-4 border border-white/6">
+              <h5 className="text-white/90 mb-2 font-semibold">Next hours</h5>
+              <div className="w-full h-44">
+                {hourlyData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={hourlyData} margin={{ top: 0, right: 10, left: -20, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#404040" />
+                      <XAxis dataKey="time" stroke="#ddd" />
+                      <YAxis stroke="#ddd" domain={[data => Math.min(...hourlyData.map(h=>h.temp))-3, data => Math.max(...hourlyData.map(h=>h.temp))+3]} />
+                      <Tooltip contentStyle={{ background: 'rgba(0,0,0,0.8)', border: 'none', color: '#fff' }} labelStyle={{ color: '#fff' }} />
+                      <Line type="monotone" dataKey="temp" stroke="#f6c84c" strokeWidth={3} dot={{ r: 4 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-white/60">No hourly data</div>
+                )}
               </div>
             </div>
           </div>
-        </>
+        </main>
       )}
-    </div>
-  );
-};
 
-export default Weath;
+     
+    </div>
+  )
+}
+
+
